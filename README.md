@@ -3,7 +3,19 @@
 ##### Table of Contents  
 
 
-[TOC]
+- [Language models](#language-models)
+- [Setup](#setup)
+  * [Installation](#installation)
+  * [Define a dictionary containing all model and environmental parameters](#define-a-dictionary-containing-all-model-and-environmental-parameters)
+  * [Folder setups](#folder-setups)
+- [Usage example: IMDB demo](#usage-example--imdb-demo)
+  * [Download imdb data (once)](#download-imdb-data--once-)
+  * [Create params.py (once)](#create-paramspy--once-)
+  * [Folder setups](#folder-setups-1)
+  * [Creating features](#creating-features)
+  * [Run the model](#run-the-model)
+- [Pretrained models](#pretrained-models)
+- [Finetuning the Language Model](#finetuning-the-language-model)
 
 
 This repository is adapted from the officiel [Pytorch-Transformers](https://github.com/huggingface/pytorch-transformers) library by HuggingFace.
