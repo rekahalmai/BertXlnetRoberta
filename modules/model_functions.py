@@ -101,11 +101,11 @@ def train(train_dataloader, model, args, eval_dataloader=None):
                     if args["evaluate_during_training"]:
                         # Only evaluate when single GPU otherwise metrics may not average well
                         results = evaluate(model, eval_dataloader, args)
-#                        for key, value in results.items():
-#                            tb_writer.add_scalar("eval_{}".format(key), value, global_step)
-#                    tb_writer.add_scalar("lr", scheduler.get_lr()[0], global_step)
-#                    tb_writer.add_scalar("loss", (tr_loss - logging_loss) / args["logging_steps"], global_step)
-#                    logging_loss = tr_loss
+                #                        for key, value in results.items():
+                #                            tb_writer.add_scalar("eval_{}".format(key), value, global_step)
+                #                    tb_writer.add_scalar("lr", scheduler.get_lr()[0], global_step)
+                #                    tb_writer.add_scalar("loss", (tr_loss - logging_loss) / args["logging_steps"], global_step)
+                #                    logging_loss = tr_loss
 
                 if args["save_steps"] > 0 and global_step % args["save_steps"] == 0:
                     # Save model checkpoint
@@ -116,7 +116,7 @@ def train(train_dataloader, model, args, eval_dataloader=None):
                     # Take care of distributed/parallel training
                     model_to_save.save_pretrained(output_dir)
                     logger.info("Saving model checkpoint to %s", output_dir)
-    
+
     return model, train_loss_set, global_step, tr_loss / global_step
 
 
@@ -216,7 +216,7 @@ def evaluate(model, eval_dataloader, args, prefix=""):
     results["model"] = args["model"]
     results.update(results)
     results["eval_loss"] = eval_loss
-    
+
     output_eval_file = os.path.join(eval_output_dir, "eval_results.txt")
     with open(output_eval_file, "w") as writer:
         logger.info("***** Eval results {} *****".format(prefix))
@@ -247,12 +247,12 @@ def main():
 
     data_path = params['data_dir']
     max_seq_length = params['max_seq_len']
-    
+
     if params["evaluate_during_training"]:
         val_dataloader_name = f'{data_path}val_dataloader_{max_seq_length}_{params["model_type"]}'
         print(f'Load evaluation during training dataloader from {val_dataloader_name}...')
         val_dataloader = torch.load(val_dataloader_name)
-        
+
     if params['do_train']:
         dataloader_name = f'{data_path}dataloader_{max_seq_length}_{params["model_type"]}'
         print(f'Load train dataloader saved in {dataloader_name}..')
@@ -261,7 +261,7 @@ def main():
     if params['do_train'] and params['evaluate_during_training']:
         print(f'Start training... Will evaluate ')
         model, train_loss_set, global_step, tr_loss = train(train_dataloader, model, params, val_dataloader)
-        
+
     elif params['do_train']:
         print(f'Start training...')
         model, train_loss_set, global_step, tr_loss = train(train_dataloader, model, params)
@@ -279,22 +279,23 @@ def main():
     model.config.to_json_file(output_config_file)
     tokenizer.save_vocabulary(params["output_dir"])
     print(f'Model, config and vocab are saved in {params["output_dir"]}..')
-    
+
     if params["do_eval"]:
         eval_dataloader_name = f'{data_path}eval_dataloader_{max_seq_length}_{params["model_type"]}'
         print(f'Load evaluation dataloader from {eval_dataloader_name}...')
         eval_dataloader = torch.load(eval_dataloader_name)
         print(f'Evaluation dataloader is loaded.')
-          
+
         result = evaluate(model, eval_dataloader, params, prefix="")
         result = dict((k + '_{}'.format(global_step), v) for k, v in result.items())
         output_results_file = os.path.join(params["output_dir"], "results.json")
         print(f'Saving results to {output_results_file}.')
         torch.save(result, output_results_file)
 
-        return 
+        return
     else:
-        return 
+        return
+
 
 if __name__ == "__main__":
     main()

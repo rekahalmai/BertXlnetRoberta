@@ -1,15 +1,12 @@
-
-""" This script creates a dict containing the parameters for a BERT classification. 
+""" This script creates a dict containing the parameters for a BERT classification.
 Example parameter dictionaries can be seen in ../example_dict/ """
 
+import torch
 
-import torch 
 
-
-def add_tokenizer(params): 
-    
+def add_tokenizer(params):
     from pytorch_transformers import (WEIGHTS_NAME, BertConfig, BertForSequenceClassification, BertTokenizer,
-                                      XLMConfig, XLMForSequenceClassification, XLMTokenizer, 
+                                      XLMConfig, XLMForSequenceClassification, XLMTokenizer,
                                       XLNetConfig, XLNetForSequenceClassification, XLNetTokenizer,
                                       RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer)
     MODEL_CLASSES = {
@@ -28,22 +25,23 @@ def add_tokenizer(params):
 
 
 def main():
-    
-    task_name  = 'bert_128' 
+    task_name = 'bert_128'
     params = {
-        'data_dir': 'data/',                              # Directory of train.tsv, evaluation.tsv and test.tsv (optional)
-        'params_dict_dir' : f'{task_name}_params.json',   # We save the dict here. It will be overwritten with more info. 
-        'model_type':  'bert',                            # Defines the model type
-        'model': 'bert-base-cased',                       # Defines the exact model
+        'data_dir': 'data/',  # Directory of train.tsv, evaluation.tsv and test.tsv (optional)
+        'params_dict_dir': f'{task_name}_params.json',  # We save the dict here. It will be overwritten with more info.
+        'model_type': 'bert',  # Defines the model type
+        'model': 'bert-base-cased',  # Defines the exact model
         'task_name': 'binary',
-        'output_dir': f'outputs/{task_name}/',            # The output will be saved in the output/bert_128 directory
-        'cache_dir': 'cache/',                            
-        'do_train': True,                                 # Need to specify True for training
-        'do_eval': True,                                  # Need to specify True for evaluation
-        'fp16': False,                                    # If True, decrease precision of all calculation (needs apex package)
-        'fp16_opt_level': 'O1',                           # Precision level (only relevant if fp16 is defined True)
-        'max_seq_len': 128,                               # Max text taken for one sentence
-        'output_mode': 'classification', 
+        'output_dir': f'outputs/{task_name}/',  # The output will be saved in the output/bert_128 directory
+        'cache_dir': 'cache/',
+        'do_train': True,  # Need to specify True for training
+        'do_eval': True,  # Need to specify True for evaluation
+        'evaluate_during_training': False,  # If True, evaluation during training -> necessite val.tsv in data/
+        # Note: the training will be very long if it is chosenn True
+        'fp16': False,  # If True, decrease precision of all calculation (needs apex package)
+        'fp16_opt_level': 'O1',  # Precision level (only relevant if fp16 is defined True)
+        'max_seq_len': 128,  # Max text taken for one sentence
+        'output_mode': 'classification',
         'train_batch_size': 32,
         'eval_batch_size': 32,
 
@@ -66,16 +64,13 @@ def main():
         'notes': 'Using IMDB dataset',
         'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
     }
-    
+
     params = add_tokenizer(params)
     # Save the dict in directort defined in the dict
     torch.save(params, params['params_dict_dir'])
-    
-    return 
+
+    return
 
 
-
-if __name__ == '__main__': 
+if __name__ == '__main__':
     main()
-    
-    
