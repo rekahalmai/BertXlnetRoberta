@@ -218,10 +218,6 @@ Interestingly even XLNet performs better when used with increased sequence lengt
 I also tried to finetune BERT on the target corpus, this did not improved the results.
 Large models (such as bert-large-uncased, etc) are too large for a p2.xlarge aws instance, so I could not use them.
 
-Time of training:
-- BERT and RoBERTa models can be trained in one hour on a p2.xlarge
-- XLNet necessite longer training (< 1h)
-- For XLM, creating the features seemed to be long
 
 It would be good to run RoBERTa with a max seq len of 512 (but I did not have enough time).
 
