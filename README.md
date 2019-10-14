@@ -1,7 +1,6 @@
 # Language models
 
-##### Table of Contents  
-
+**Table of Contents**
 
 - [Language models](#language-models)
 - [Setup](#setup)
@@ -10,10 +9,11 @@
   * [Folder setups](#folder-setups)
 - [Usage example: IMDB demo](#usage-example--imdb-demo)
   * [Download imdb data (once)](#download-imdb-data--once-)
-  * [Create params.py (once)](#create-paramspy--once-)
+  * [Create params.py (once)`](#create-paramspy--once--)
   * [Folder setups](#folder-setups-1)
   * [Creating features](#creating-features)
-  * [Run the model](#run-the-model)
+  * [Run the model (training and evaluation)](#run-the-model--training-and-evaluation-)
+  * [Results on IMDB classification](#results-on-imdb-classification)
 - [Pretrained models](#pretrained-models)
 - [Finetuning the Language Model](#finetuning-the-language-model)
 
@@ -39,7 +39,7 @@ All these steps use the same dictionary, containing parameters such as the model
 
 
 
-This dictionary defines the model and it is the only difference between the different models. 
+This dictionary defines the model and it is the only difference between the different models. See the notebooks for a dictionary example for each model. 
 
 
 # Setup
@@ -71,7 +71,7 @@ pip install tensorboardX
 pip install wget
 ```
 
-Run the setup.py in the main directory. This will ensure that the `modules`` scripts can be importer from everywhere in the project. 
+Run the ``setup.py` in the main directory. This will ensure that the ``modules`` scripts can be importer from everywhere in the project. 
 
 ```
 python3 setup.py
@@ -82,7 +82,7 @@ Example of creating a parameter dictionary for bert classification:
 ```
 python3 modules/create_params_example.py
 ```
-See the ```create_params_example/py``` for the description of each key. The final dictionary has to be something like: 
+See the ```create_params_example.py``` for the description of each key. The final dictionary has to be something like: 
 ```
 params = {
         'data_dir': 'data/',                              # Directory of train.tsv, evaluation.tsv and test.tsv (optional)
@@ -94,6 +94,8 @@ params = {
         'cache_dir': 'cache/',                            
         'do_train': True,                                 # Need to specify True for training
         'do_eval': False,                                 # Need to specify True for evaluation
+        'evaluate_during_training': False,                # If True, evaluation during training -> necessite val.tsv in data/
+                                                          # Note: the training will be very long if it is chosen True 
         'fp16': False,                                    # If True, decrease precision of all calculation (needs apex package)
         'fp16_opt_level': 'O1',                           # Precision level (only relevant if fp16 is defined True)
         'max_seq_len': 128,                               # Max text taken for one sentence
@@ -121,7 +123,7 @@ params = {
         'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
     }
 ```
-(Note: it is important to define a ``params_dict_dir`` in the dictionary as it will be overwritten with more information if the model is trained from REPL.)
+(Note: it is important to define a ``params_dict_dir`` in the dictionary as it will be overwritten with more information if the model is trained from REPL)
 
 ## Folder setups
 The `outils.py`` script creates the results and output folders. 
@@ -147,21 +149,25 @@ This example shows how to do a binary classification on the IMDB dataset.
 
 ## Download imdb data (once)
 
-The imdb_data.py script downloads the imdb data and saves it in the 'data' repository. 
-It also separates training, evaluation and test data. These are saved in tsv file formats in the same 'data' folder. It adds a string colonne, 'alpha' to the dataframes (I don't know why). 
+The ``imdb_data.py``` script downloads the imdb data and saves it in the 'data' repository. 
+It also separates training, evaluation and test data. (It does not generate 'val.tsv', if you would like to run evaluation during training, generate a subset of data as val.tsv.)
+All these are saved as a tsv file in the 'data' folder. It adds a string column, 'alpha' to the dataframes (I don't know why). 
 
 ```
 python3 modules/imdb_data.py
 ```
 
-## Create params.py (once)
+## Create params.py (once)`
+The ```create_params_example.py``` script creates and dumps a dictionary containing the model parameters for bert classification.
+Similar dictionary needs to be defined for each model. (See the notebooks for more examples.) 
+
 ```
 python3 modules/create_params_example.py
 ```
 
 
 ## Folder setups
-The `outils.py`` script creates the results and output folders. (Needs to be done every time we run a different model). 
+The ``outils.py`` script creates the results and output folders. (Needs to be done every time we run a different model). 
 
 ```
 python3 modules/outils.py params.json
@@ -178,28 +184,54 @@ The final folder architecture will be:
 │       ├── pos             # Positive reviews in the train set  
 │       ├── neg             # Negative reviews in the train set  
 ├── cache                   # Cache 
-├── reports                 # Reports directory. SUbdirectories are created each time we run a different classification. 
+├── reports                 # Reports directory. Subdirectories are created each time we run a different classification.
+│   └── bert_128            # Training set of imdb data. After the creation of the csv could be dropped
 └── outputs                 # Positive reviews in the train set 
 ```
 
 ## Creating features
-The input files (train.tsv, evaluation.tsv and optionally val.tsv) are in the 'data' folder. We create the features from the model with the create_features function from the ``process.py` script. This gives a list of InputFeatures, that we use to create a DataLoader class. This will be inputted in the model for training and evaluation. 
+The input files (train.tsv, evaluation.tsv and optionally val.tsv) are in the 'data' folder. We create the features from the saved tsv files with the ```create_features``` function from the 
+```process.py``` script. This gives a list of InputFeatures, that we use to create a DataLoader class. This will be inputted in the model for training and evaluation. 
 
 The command line for creating and storing the features is: 
 (first argument: the dictionary of parameters dumped as a json file, 
 second argument: recreate (True for first creation of the data with the given batch size, sequence length and tokenizer.)
 
 ```
-python3 modules/process.py params.json True 
+python3 modules/process.py bert_128_params.json True 
 ```
 
 
-## Run the model 
+## Run the model (training and evaluation)
 This script runs and evaluate the model and saves the results in the results directory. 
 
 ```
 python3 modules/model_funcions.py modules/params.json 
 ```
+
+If we wish to reload  the model, need to zip the saved pytorch_model.bin, vocab.txt and config.json as a tar.gz file, save it to the 'cache/' directory and reload it as: 
+```
+model = model_class.from_pretrained("pretrained_model_path", cache_dir=params["cache_dir"], num_labels=2)
+```
+
+## Results on IMDB classification 
+I ran the models several times with different setups. 
+The best results were achieved by BERT using 512 sequence length (the model was very sensitive for this parameter).
+
+I also tried to finetune BERT on the target corpus, this did not improved the results. 
+
+| Model          | Model Type        | Max seq length  |# epochs  | F1 score  |
+| :------------- |:------------------| :---------------| :--------| :---------|
+| bert           | bert-base-uncased | 128       |6         |0.891      |
+| bert           | bert-base-uncased | 256       |6         |0.923      |
+| bert           | bert-base-uncased | 512       |6         |0.932      |
+| roberta        | roberta-base      | 128       |6         |0.902      |
+| roberta        | roberta-base      | 256       |6         |0.926      |
+| xlnet          | xlnet-base-cased  | 128       |6         |0.905      |
+| xlnet          | xlnet-base-cased  | 256       |6         |      |
+| xlnet          | xlnet-base-cased  | 512       |6         |0.930      |
+| xlm            | xlm-mlm-ende-1024 | 128       |6         |0.867      |
+| xlm            | xlm-mlm-ende-1024 | 256       |6         |      |
 
 # Pretrained models
 
@@ -235,6 +267,7 @@ The table below shows the currently available model types and their models. You 
 | RoBERTa      | roberta | roberta-large-mnli | 24-layer, 1024-hidden, 16-heads, 355M parameters <br>roberta-large fine-tuned on MNLI. |
 
 
+
 # Finetuning the Language Model
 Finetune the BERT language model according to the [Pytorch transformers library](https://github.com/huggingface/transformers/tree/71d597dad0a28ccc397308146844486e0031d701/examples/lm_finetuning) as:
 
@@ -260,3 +293,8 @@ python3 modules/finetune_on_pregenerated.py
 ```
 
 See more [here](https://github.com/huggingface/transformers/tree/71d597dad0a28ccc397308146844486e0031d701/examples/lm_finetuning). 
+If we wish to load a pretrained model, pytorch_model.bin, vocab.txt and config.json as a tar.gz file, save it to the 'cache/' directory and reload it as: 
+```
+model = model_class.from_pretrained("pretrained_model_path", cache_dir=params["cache_dir"], num_labels=2)
+```
+
